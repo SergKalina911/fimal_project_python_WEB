@@ -12,13 +12,13 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User, Role
-from app.schemas import UserCreate, UserLogin, Token
+from app.schemas import UserCreate, UserLogin, Token, UserRead   # 🔹 ЗМІНА: додано UserRead
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+# --- реєстрація ---
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def signup(body: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Перевірка чи існує хоча б один ADMIN. Якщо немає — призначати роль ADMIN
     result = await db.execute(select(User).where(User.role == Role.ADMIN))
     admin_exists = result.scalars().first()
     role = Role.ADMIN if not admin_exists else Role.USER
@@ -38,20 +38,19 @@ async def signup(body: UserCreate, db: AsyncSession = Depends(get_db)):
         await db.rollback()
         raise HTTPException(status_code=409, detail="User already exists")
 
-    # 🔹 Зміна: тепер токен генерується по user.id, а не по username
     access_token = create_access_token(new_user.id)
     refresh_token = create_refresh_token(new_user.id)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    # 🔹 ЗМІНА: повертаємо DTO Token
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
 
-# 🔹 Логін для Swagger (OAuth2 password flow → form-data)
+# --- логін ---
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
-    # 🔹 Тут form_data.username = email (бо OAuth2PasswordRequestForm має поле "username")
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
 
@@ -64,12 +63,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 🔹 Зміна: токени тепер по user.id
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    # 🔹 ЗМІНА: повертаємо DTO Token
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
+

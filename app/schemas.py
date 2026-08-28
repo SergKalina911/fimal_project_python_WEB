@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -18,6 +19,7 @@ class UserRead(UserBase):
     email: str
     role: str
     is_active: bool
+    photo_count: int | None = None   # 🔹 кількість фото користувача
 
     class Config:
         from_attributes = True
@@ -25,8 +27,7 @@ class UserRead(UserBase):
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     # 🔹 інші поля можна додати за потреби
-    # is_active: Optional[bool] = None   # тільки для адміна
-    # description: Optional[str] = None  # якщо треба додати поле опису
+
 
 # --- Tag ---
 class TagBase(BaseModel):
@@ -42,6 +43,27 @@ class TagRead(TagBase):
         from_attributes = True
 
 
+# --- Comment ---
+class CommentBase(BaseModel):
+    text: str
+
+class CommentCreate(CommentBase):
+    photo_id: int
+
+class CommentRead(CommentBase):
+    id: int
+    photo_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime]   # 🔹 дозволяємо None
+
+    class Config:
+        from_attributes = True
+
+class CommentUpdate(BaseModel):   # 🔹 нова схема для PUT
+    text: str
+
+
 # --- Photo ---
 class PhotoBase(BaseModel):
     url: str
@@ -49,32 +71,29 @@ class PhotoBase(BaseModel):
 
 class PhotoCreate(PhotoBase):
     user_id: int
-    # тут краще одразу приймати список id тегів
     tag_ids: Optional[List[int]] = []
 
-class PhotoRead(PhotoBase):
+
+# --- PhotoTransform ---
+class PhotoTransformRead(BaseModel):
     id: int
-    user_id: int
-    status: str   # 🔹 додано, щоб відображати статус фото
-    tags: List[TagRead] = []   # список тегів, які прив’язані до фото
-    
+    photo_id: int
+    transformed_url: str
+    qr_url: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-# --- Comment ---
-class CommentBase(BaseModel):
-    text: str
-
-class CommentCreate(CommentBase):
-    photo_id: int
-    # user_id: int
-
-class CommentRead(CommentBase):
+class PhotoRead(PhotoBase):
     id: int
-    photo_id: int
     user_id: int
+    status: str
+    tags: List[TagRead] = []
+    transforms: List[PhotoTransformRead] = []
+    comments: List[CommentRead] = []   # 🔹 список коментарів з таймстемпами
+    owner: UserRead | None = None      # 🔹 власник фото
 
     class Config:
         from_attributes = True
