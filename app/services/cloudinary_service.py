@@ -1,4 +1,14 @@
-# app/services/cloudinary_service.py
+"""
+Сервіс для роботи з Cloudinary. Містить функції для завантаження фото та формування URL з
+трансформаціями. Використовує бібліотеку cloudinary для взаємодії з API Cloudinary.
+Функції включають:
+- upload_image: Завантажує файл у Cloudinary (звичайний UploadFile з FastAPI). Використовується
+при створенні фото користувачем.
+- upload_bytes: Завантажує байти напряму (наприклад QR-код з BytesIO). Це прибирає костиль із
+UploadFile(file=qr_buffer).
+- transform_image: Формує URL для трансформованого фото через Cloudinary. Використовує public_id,
+щоб не вантажити фото повторно.
+"""
 
 import cloudinary
 import cloudinary.uploader

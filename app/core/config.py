@@ -1,3 +1,8 @@
+"""
+Конфігураційний файл для FastAPI додатку з використанням Pydantic Settings. Для зручності, всі
+змінні середовища зберігаються у файлі .env.
+"""
+
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):

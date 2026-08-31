@@ -66,19 +66,60 @@ docker-compose run app alembic upgrade head
 ## 📂 Структура проєкту
 
 ```text
-app/
-  core/          # Конфіг, база, security
-  models/        # SQLAlchemy моделі
-  repositories/  # Робота з БД
-  routes/        # FastAPI роутери
-  services/      # Cloudinary, QR
-  schemas.py     # Pydantic схеми
-  main.py        # Точка входу
-migrations/      # Alembic міграції
-Dockerfile
-docker-compose.yml
-.env
-README.md
+fimal_project_python_WEB/
+│
+├── app/                        # Основний код застосунку FastAPI
+│   ├── __init__.py             # Робить папку app Python-пакетом
+│   ├── main.py                 # Точка входу FastAPI (створення app, підключення маршрутів)
+│   │
+│   ├── core/                   # Базові налаштування та інфраструктура
+│   │   ├── config.py           # Конфігурація (налаштування з .env через Pydantic)
+│   │   ├── database.py         # Підключення до БД, створення engine та session
+│   │   └── security.py         # Логіка JWT, хешування паролів, перевірка ролей
+│   │
+│   ├── models/                 # ORM-моделі SQLAlchemy
+│   │   ├── __init__.py         # Імпорти моделей для зручності
+│   │   ├── user.py             # Модель користувача (email, username, role, active)
+│   │   ├── photo.py            # Модель фото (опис, url, owner, теги)
+│   │   ├── comment.py          # Модель коментаря (text, created_at, updated_at)
+│   │   └── tag.py              # Модель тегу (унікальне ім’я)
+│   │
+│   ├── repositories/           # Робота з БД через ORM
+│   │   ├── user_repo.py        # CRUD для користувачів
+│   │   ├── photo_repo.py       # CRUD для фото
+│   │   └── comment_repo.py     # CRUD для коментарів
+│   │
+│   ├── routes/                 # REST API маршрути
+│   │   ├── auth.py             # Реєстрація, логін, JWT
+│   │   ├── users.py            # CRUD для користувачів, профіль
+│   │   ├── photos.py           # CRUD для фото, теги, трансформації
+│   │   ├── comments.py         # CRUD для коментарів
+│   │   └── tags.py             # CRUD для тегів
+│   │
+│   ├── schemas.py              # Pydantic-схеми для валідації та серіалізації
+│   │
+│   └── services/               # Зовнішні сервіси
+│       ├── cloudinary_service.py # Завантаження та трансформації фото через Cloudinary
+│       └── qr_service.py         # Генерація QR-кодів для трансформованих фото
+│
+├── migrations/                 # Alembic міграції для БД
+│
+├── tests/                      # Тести
+│
+│
+├── Dockerfile                  # Інструкції для створення Docker-образу
+├── docker-compose.yml          # Сервіси app + db, мережі та томи
+├── .env                        # Налаштування для продакшн (Postgres, JWT)
+├── .env.test                   # Налаштування для тестів (SQLite in-memory)
+├── pytest.ini                  # Конфіг для pytest (покриття >90%)
+├── alembic.ini                 # Конфіг Alembic
+├── pyproject.toml              # Залежності (poetry)
+├── poetry.lock                 # Зафіксовані версії залежностей
+├── README.md                   # Документація по запуску та деплою
+├── LICENSE                     # Ліцензія проєкту
+└── NFR.md                      # Нефункціональні вимоги
+
+
 ```
 
 ---
@@ -86,19 +127,28 @@ README.md
 ## 🔑 Ролі та права
 
 ```text
-| Дія                    | User      | Moderator | Admin  |
-| ---                    | ---       | ---       | ---    |
-| Завантажити фото       | ✅        | ✅       | ✅    |
-| Редагувати фото        | ✅ (своє) | ❌       | ✅    |
-| Видалити фото          | ✅ (своє) | ❌       | ✅    |
-| Додати теги            | ✅ (своє) | ❌       | ✅    |
-| Замінити теги          | ✅ (своє) | ❌       | ✅    |
-| Модерація фото         | ❌        | ✅       | ✅    |
-| Створити коментар      | ✅        | ✅       | ✅    |
-| Редагувати коментар    | ✅ (свій) | ❌       | ✅    |
-| Видалити коментар      | ❌        | ✅       | ✅    |
-| Керування тегами       | ❌        | ❌       | ✅    |
-| Бан/розбан користувача | ❌        | ❌       | ✅    |
+| Дія                                  | User      | Moderator                   | Admin         |
+| -------------------------------------| ----------| ----------------------------| --------------|
+| **Фото**                                                                                       |
+| Завантажити/редагувати/видалити фото | ✅ (свої) | ✅ (свої)                  | ✅ (будь‑які) |
+| Додати/замінити/видалити теги        | ✅ (свої) | ✅ (свої)                  | ✅ (будь‑які) |
+| Модерація фото                       | ✅ (свої) | ✅ (свої)                  | ✅ (будь‑які) |
+| **Коментарі**                                                                                  |
+| Створити коментар                    | ✅        | ✅                         | ✅            |
+| Редагувати коментар                  | ✅ (свій) | ✅ (свій)                  | ✅ (свій)     |
+| Видалити коментар                    | ❌        | ✅ (будь‑які, крім адміна) | ✅ (будь‑які) |
+| **Теги (глобальні)**                                                                           |
+| Створити тег                         | ❌        | ❌                         | ✅            |
+| Перегляд списку тегів                | ✅        | ✅                         | ✅            |
+| Видалити тег                         | ❌        | ❌                         | ✅            |
+| **Користувачі**                                                                                |
+| Перегляд свого профілю               | ✅        | ✅                         | ✅            |
+| Оновлення свого профілю              | ✅        | ✅                         | ✅            |
+| Перегляд чужого профілю              | ❌        | ❌                         | ✅            |
+| Оновлення чужого профілю             | ❌        | ❌                         | ❌            |
+| Зміна ролі                           | ❌        | ❌                         | ✅            |
+| Бан/розбан                           | ❌        | ❌                         | ✅            |
+
 ```
 
 ## 📂 Основні ендпоінти
@@ -212,6 +262,53 @@ curl -X DELETE http://localhost:8000/comments/21 \
 - Passlib (bcrypt)
 
 ---
+
+## 🧪 Тестування
+
+### Типи тестів
+
+- Модульні тести (unit tests) — перевіряють окремі репозиторії та сервіси напряму, без запуску FastAPI‑app і
+  без реальної БД чи Cloudinary.
+- Всі зовнішні залежності (БД, Cloudinary, QR‑сервіс) замінені на моки (AsyncMock, monkeypatch).
+
+### Запуск тестів
+
+#### Запустити всі модульні тести
+
+```bush
+  docker-compose run app poetry run pytest
+```
+
+### Структура тестів
+
+```text
+tests/
+  test_auth_routes_unit.py     # маршрути авторизації
+  test_auth_unit.py            # створення користувачів, ролі, токени
+  test_ban_unit.py             # логіка бану/розбану
+  test_cloudinary_unit.py      # завантаження та трансформації фото (mock Cloudinary)
+  test_comment_repo_unit.py    # CRUD для коментарів у репозиторії
+  test_comments_routes_unit.py # маршрути коментарів
+  test_comments_unit.py        # логіка коментарів, таймстемпи
+  test_main_unit.py            # точка входу FastAPI
+  test_photo_repo_unit.py      # CRUD для фото у репозиторії
+  test_photo_transform_unit.py # трансформації фото
+  test_photos_routes.py        # інтеграційні тести для фото
+  test_photos_routes_unit.py   # маршрути фото
+  test_photos_unit.py          # логіка фото, обмеження тегів
+  test_qr_unit.py              # генерація QR-кодів
+  test_roles_unit.py           # перевірка ролей користувачів
+  test_schemas_unit.py         # Pydantic-схеми
+  test_security_unit.py        # JWT, хешування паролів
+  test_tag_repo_unit.py        # CRUD для тегів у репозиторії
+  test_tags_limit_unit.py      # обмеження кількості тегів
+  test_tags_routes_unit.py     # маршрути тегів
+  test_tags_unit.py            # логіка тегів
+  test_user_repo_unit.py       # CRUD для користувачів у репозиторії
+  test_users_routes_unit.py    # маршрути користувачів
+  test_users_unit.py           # логіка користувачів, бан/розбан
+
+```
 
 ## Оригінал завдання
 

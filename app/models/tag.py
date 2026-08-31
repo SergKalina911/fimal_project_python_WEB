@@ -1,3 +1,8 @@
+"""
+Файл для визначення моделі тегу у базі даних. Містить клас Tag, який описує структуру
+таблиці тегів та її зв’язки з іншими моделями (Photo).
+"""
+
 from sqlalchemy import Column, Integer, String, Boolean, Enum, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from app.core.database import Base

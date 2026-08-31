@@ -1,4 +1,8 @@
-# app/models/photo.py
+""" 
+Файл для визначення моделі фото у базі даних. Містить клас Photo, який описує структуру
+таблиці фото та її зв’язки з іншими моделями (User, Tag, Comment, PhotoTransform).
+"""
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from app.core.database import Base

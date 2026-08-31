@@ -1,4 +1,14 @@
-""" User routes """
+""" 
+Файл містить маршрути для роботи з користувачами у веб-додатку. Використовує FastAPI для створення
+REST API та SQLAlchemy для взаємодії з базою даних. Функції огорнуті @router.get, @router.put та
+@router.delete у маршрутизаційний клас APIRouter, що дозволяє організувати маршрути у модулі.
+Використовує асинхронні сесії для ефективного виконання запитів. Маршрути включають:
+- get_user_profile: Перегляд профілю користувача за ID. Доступно лише самому користувачу або адміну
+- update_user_profile: Оновлення профілю користувача за ID. Доступно лише самому користувачу.
+- assign_role: Призначення ролі користувачу. Доступно лише адміну.
+- ban_user: Бан користувача. Доступно лише адміну.
+- unban_user: Розбан користувача. Доступно лише адміну.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,8 +66,10 @@ async def update_user_profile(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.id != current_user.id and current_user.role != Role.ADMIN:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+    # 🔹 редагувати профіль може тільки сам користувач
+    if user.id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own profile")
+
 
     for field, value in update_data.dict(exclude_unset=True).items():
         setattr(user, field, value)

@@ -1,3 +1,8 @@
+"""
+Файл для налаштування бази даних та створення асинхронного сеансу SQLAlchemy. Використовується для
+взаємодії з базою даних у FastAPI додатку.
+"""
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings

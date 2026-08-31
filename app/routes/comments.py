@@ -1,5 +1,17 @@
 
-""" Comment routes """
+"""
+Файл для визначення маршрутів коментарів. Містить маршрути для створення, отримання, редагування
+та видалення коментарів. Використовує FastAPI для створення REST API та SQLAlchemy для взаємодії з
+базою даних. Функції огорнуті у маршрутизаційний клас APIRouter, що дозволяє організувати маршрути
+у модулі. Маршрути включають: 
+- create_comment: Створення нового коментаря до фото. Повертає DTO PhotoRead з оновленим списком
+коментарів.
+- get_comment: Отримання коментаря за його ID. Повертає DTO CommentRead.
+- update_comment: Редагування коментаря. Доступно лише автору коментаря. Повертає DTO CommentRead з
+оновленим коментарем.
+- delete_comment: Видалення коментаря. Доступно лише модератору або адміну. Повертає просте
+повідомлення про успішне видалення.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,9 +123,12 @@ async def delete_comment(
     if not comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
 
-    # 🔹 за ТЗ: видаляти можуть тільки модератор або адмін
+    # 🔹 видаляти можуть адмін (будь‑які) або модератор (але не коментарі адміна)
+    if current_user.role == Role.MODERATOR and comment.user.role == Role.ADMIN:
+        raise HTTPException(status_code=403, detail="Moderator cannot delete admin comments")
     if current_user.role not in [Role.ADMIN, Role.MODERATOR]:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
 
     await db.delete(comment)
     await db.commit()

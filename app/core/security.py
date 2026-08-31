@@ -1,3 +1,9 @@
+"""
+Файл для управління безпекою та аутентифікацією користувачів у FastAPI додатку. Містить функції для
+хешування паролів, генерації та перевірки JWT токенів, а також декоратори для перевірки ролей
+користувачів.
+"""
+
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from app.core.config import settings

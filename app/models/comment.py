@@ -1,3 +1,8 @@
+""" 
+Файл для визначення моделі коментаря у базі даних. Містить клас Comment, який описує структуру
+таблиці коментарів та її зв’язки з іншими моделями (Photo та User).
+"""
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base

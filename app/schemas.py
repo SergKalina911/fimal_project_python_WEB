@@ -1,3 +1,15 @@
+""" Файл schemas.py містить Pydantic-схеми для валідації та серіалізації даних, що використовуються у додатку.
+Схеми включають: 
+- UserBase, UserCreate, UserLogin, UserRead, UserUpdate: для роботи з користувачами.
+- TagBase, TagCreate, TagRead: для роботи з тегами.
+- CommentBase, CommentCreate, CommentRead, CommentUpdate: для роботи з коментарями.
+- PhotoBase, PhotoCreate, PhotoRead: для роботи з фото.
+- PhotoTransformRead: для роботи з трансформаціями фото.
+- Token: для роботи з токенами аутентифікації.
+- TagAttach: допоміжна схема для прив’язки тегів до фото.
+Кожна схема визначає поля та їх типи, а також налаштування конфігурації для серіалізації та десеріалізації даних.
+"""
+
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List

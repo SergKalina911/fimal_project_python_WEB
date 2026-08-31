@@ -1,4 +1,20 @@
-""" Photo routes """
+"""
+Файл для визначення маршрутів, пов'язаних з фото. Містить маршрути для завантаження, модерації,
+редагування, видалення фото та управління тегами. Використовує FastAPI для створення REST API та
+SQLAlchemy для взаємодії з базою даних. Функції огорнуті у маршрутизаційний клас APIRouter, що
+дозволяє організувати маршрути у модулі. Використовує асинхронні сесії для ефективного виконання
+запитів. Маршрути включають:
+- upload_photo: Завантаження нового фото з можливістю додавання опису та тегів (до 5).
+- moderate_photo: Модерація фото з можливістю застосування трансформацій та додавання нових тегів
+(до 5).
+- update_photo: Оновлення опису фото та заміна всіх тегів на нові (до 5). Старі теги видаляються.
+- delete_photo: Видалення фото. Доступно лише власнику фото або адміну.
+- add_tags: Додавання нових тегів до фото без видалення існуючих. Доступно лише власнику фото або
+адміну.
+- delete_photo_tag: Видалення конкретного тегу з фото. Доступно лише власнику фото або адміну.
+- get_user_photos: Отримання всіх фото конкретного користувача з усіма зв'язками (теги, коментарі,
+трансформації, власник).
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -95,8 +111,8 @@ async def moderate_photo(
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    # 🔹 дозволяємо власнику або модератору/адміну
-    if photo.user_id != current_user.id and current_user.role not in [Role.ADMIN, Role.MODERATOR]:
+    # 🔹 дозволяємо власнику фото або адміна
+    if photo.user_id != current_user.id and current_user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     photo.status = "moderation"

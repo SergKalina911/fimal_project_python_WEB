@@ -1,10 +1,13 @@
+"""
+Файл для визначення моделі користувача у базі даних. Містить клас User, який описує структуру
+таблиці користувачів та її зв’язки з іншими моделями (Photo, Comment).
+"""
+
 import enum
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from sqlalchemy.sql import func
 from sqlalchemy import Column, Integer, String, Boolean, Enum, DateTime, ForeignKey, Table
-
-
 
 class Role(enum.Enum):
     USER = "user"
