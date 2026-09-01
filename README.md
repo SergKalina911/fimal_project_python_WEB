@@ -9,11 +9,13 @@ PhotoShare — REST API на **FastAPI + SQLAlchemy + Alembic**, який реа
 - Авторизацію через JWT (access/refresh токени)
 - Ролі користувачів: User, Moderator, Admin
 - CRUD для фото, коментарів, тегів
-- Завантаження фото у **Cloudinary**
+- Завантаження фото у **Cloudinary** та трансформація фото
 - Генерацію QR‑кодів
 - Контейнеризацію через **Docker + Docker Compose**
-- Міграції бази даних через **Alembic**
+- Міграції бази даних через **Alembic** в контейнері
 - Swagger документацію (/docs)
+- Тестування через Pytest в контейнері
+- Деплой застосунку на Render.com - https://final-project-python-web.onrender.com/docs
 
 ---
 
@@ -29,7 +31,7 @@ cd fimal_project_python_WEB
 ### 2. Налаштування .env
 
 У репозиторії є файл `.env.example`.  
-Він показує, які змінні середовища потрібні для роботи проєкту, але містить лише **шаблонні значення**.
+Він показує, які змінні середовища потрібні для роботи проєкту на локальному хості, але містить лише **шаблонні значення**.
 
 #### Що треба зробити:
 
@@ -109,8 +111,10 @@ fimal_project_python_WEB/
 │
 ├── Dockerfile                  # Інструкції для створення Docker-образу
 ├── docker-compose.yml          # Сервіси app + db, мережі та томи
-├── .env                        # Налаштування для продакшн (Postgres, JWT)
+├── .env                        # Налаштування для продакшн (Postgres, JWT) - створюється окремо для деплою чи локальному використанню
 ├── .env.test                   # Налаштування для тестів (SQLite in-memory)
+├── .env.example                # Шаблон для работи на локальному хості
+├── .env.render.example         # Шаблон для деплою
 ├── pytest.ini                  # Конфіг для pytest (покриття >90%)
 ├── alembic.ini                 # Конфіг Alembic
 ├── pyproject.toml              # Залежності (poetry)
@@ -309,6 +313,81 @@ tests/
   test_users_unit.py           # логіка користувачів, бан/розбан
 
 ```
+
+---
+
+## ☁️ Deployment на Render
+
+1. Реєстрація та створення сервісу
+
+- Зареєструйтесь на Render.
+- Створіть новий Web Service → вибери свій GitHub‑репозиторій.
+- Виберіть Runtime: Docker (бо ми використовуємо Dockerfile).
+- Регіон: Frankfurt (щоб збігалося з базою).
+
+2. Створення бази даних
+
+- У Render → New → PostgreSQL.
+- Назвіть базу, наприклад photoshare-db.
+- Render згенерує:
+  - Host
+  - Port
+  - Database
+  - Username
+  - Password
+- Ці дані внесіть у env.render.example
+
+3. Налаштування env.render.example
+   Відредагуйте файл .env.render.example локально з креденшіалами Render.
+   Обов’язково додайте SSL‑параметри в кінці DATABASE_URL та SYNC_DATABASE_URL (приклад):
+
+```env
+    DATABASE_URL=postgresql+asyncpg://photoshare_db_u5s0_user:REAL_PASSWORD@dpg-daauakpsrm7s738ka1q0-a.frankfurt-postgres.render.com:5432/photoshare_db_u5s0?ssl=require
+    SYNC_DATABASE_URL=postgresql+psycopg2://photoshare_db_u5s0_user:REAL_PASSWORD@dpg-daauakpsrm7s738ka1q0-a.frankfurt-postgres.render.com:5432/photoshare_db_u5s0?sslmode=require
+
+    POSTGRES_DB=photoshare_db_u5s0
+    POSTGRES_USER=photoshare_db_u5s0_user
+    POSTGRES_PASSWORD=REAL_PASSWORD
+    POSTGRES_HOST=dpg-daauakpsrm7s738ka1q0-a.frankfurt-postgres.render.com
+    POSTGRES_PORT=5432
+```
+
+    ⚠️ Render вимагає SSL: ?ssl=require для asyncpg і ?sslmode=require для psycopg2.
+
+4. Локальний запуск і міграції
+   - Перейменуйте .env.render.example у .env.
+   - Запустіть:
+
+```bash
+docker-compose up --build
+docker-compose exec app poetry run alembic upgrade head
+```
+
+- Це проганяє всі міграції на Render‑базу.
+
+5. Environment Variables у Render
+
+- У сервісі final_project_python_WEB → Environment.
+- Додайте ті самі змінні '(DATABASE*URL, SYNC_DATABASE_URL, POSTGRES\*, SECRET_KEY, CLOUDINARY, EMAIL*\*).'
+- Збережіть → натисніть Save, rebuild, and deploy.
+
+6. Перевірка деплою
+
+- Render покаже URL, наприклад:
+  https://final-project-python-web.onrender.com
+
+- Swagger документація доступна на:
+  https://final-project-python-web.onrender.com/docs
+
+- Перевірте /auth/signup → має створювати користувача і повертати токени.
+
+### ⚡ Таким чином:
+
+- Локально ви тестуєте міграції через .env.
+- На Render прописуєте ті самі змінні у Environment.
+- Після деплою бекенд працює з базою, а всі ендпоінти доступні через публічний URL.
+
+---
 
 ## Оригінал завдання
 
